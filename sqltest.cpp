@@ -1,5 +1,8 @@
 #include <sqlite3.h>
-#include <stdio.h>
+#include <cstdio>
+#include <stdint.h>
+#include <iostream>
+
 /*
 ** This function is used to load the contents of a database file on disk 
 ** into the "main" database of open database connection pInMemory, or
@@ -63,6 +66,17 @@ int loadOrSaveDb(sqlite3 *pInMemory, const char *zFilename, int isSave){
   return rc;
 }
 
+void sqlite3_profile_callback( void * const cookie, char const query[], sqlite3_uint64 const duration_ns)
+{
+    uint64_t const duration_ms { duration_ns / 1'000'000 };
+    std::cout << "Duration: " << duration_ms << std::endl;
+}
+
+void sqlite3_trace_callback(void * const arg, char const sql[])
+{
+    std::printf("SQL: [%s]\n", sql);
+}
+
 int main(void)
 {
     sqlite3 *db;
@@ -77,17 +91,19 @@ int main(void)
         return 1;
     }
 
-    rc = loadOrSaveDb(db,"/opt/xl/current/var/database", false);
+    sqlite3_profile(db, sqlite3_profile_callback, NULL);
+
+    rc = loadOrSaveDb(db,"/home/root/sqltest/database", false);
 
     if (rc != SQLITE_OK)
     {
-        fprintf(stderr, "Failed to load dabase: %s\n", sqlite3_errmsg(db));
+        fprintf(stderr, "Failed to load database: %s\n", sqlite3_errmsg(db));
 	sqlite3_close(db);
 
 	return -1;
     }
 
-    rc = sqlite3_prepare_v2(db, "SELECT count(*) FROM production_metric", -1, &res, 0);    
+    rc = sqlite3_prepare_v2(db, "SELECT max(production_metric.end_time) AS end_time, max(production_metric.record_id) AS record_id FROM production_metric GROUP BY production_metric.event_id ORDER BY min(production_metric.record_order) DESC LIMIT 1", -1, &res, 0);    
     
     if (rc != SQLITE_OK) {
         

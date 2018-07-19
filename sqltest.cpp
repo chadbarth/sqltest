@@ -49,6 +49,8 @@ ValueLookup day_lookup[] = {
 {9025387708599245398,"Saturday","5"},
 {6584621599447379936,"Sunday","6"}};
 
+const int day_lookup_size = sizeof(day_lookup)/sizeof(*day_lookup);
+
 ValueLookup week_lookup[] = {
 {2762969076959327514,"Week 01","1"},
 {8711903816767317485,"Week 02","2"},
@@ -104,6 +106,8 @@ ValueLookup week_lookup[] = {
 {4018886481520400852,"Week 52","52"},
 {2839946670860852194,"Week 53","53"}};
 
+const int week_lookup_size = sizeof(week_lookup)/sizeof(*week_lookup);
+
 ValueLookup month_lookup[] = {
 {2762969076959327514,"January","1"},
 {8711903816767317485,"February","2"},
@@ -118,11 +122,15 @@ ValueLookup month_lookup[] = {
 {314353281143135499,"November","11"},
 {1514756153949563197,"December","12"}};
 
+const int month_lookup_size = sizeof(month_lookup)/sizeof(*month_lookup);
+
 ValueLookup quarter_lookup[] = {
 {2762969076959327514,"Q1","1"},
 {8711903816767317485,"Q2","2"},
 {6706401313513828155,"Q3","3"},
 {3734110341423542797,"Q4","4"}};
+
+const int quarter_lookup_size = sizeof(quarter_lookup)/sizeof(*quarter_lookup);
 
 ValueLookup year_lookup[] = {
 {5467488165097428562,"2000","2000"},
@@ -147,16 +155,260 @@ ValueLookup year_lookup[] = {
 {2272084301373088006,"2019","2019"},
 {4839426631653501762,"2020","2020"}};
 
+const int year_lookup_size = sizeof(year_lookup)/sizeof(*year_lookup);
+
 ValueLookup shift_lookup[] = {
 {2739294085011803857,"First Shift","first_shift"},
 {3063225426988775229,"Second Shift","second_shift"},
 {9000822531205957747,"Third Shift","third_shift"}};
+
+const int shift_lookup_size = sizeof(shift_lookup)/sizeof(*shift_lookup);
 
 ValueLookup state_lookup[] = {
 {2396343941863351454,"Running","running"},
 {5404298814632139323,"Down","down"}};
 
 const int state_lookup_size = sizeof(state_lookup)/sizeof(*state_lookup);
+
+const int step_duration = 5;
+const int state_duration = step_duration;
+const int hour_duration = 60;
+const int shift_duration = 8 * hour_duration;
+const int day_duration = 24 * hour_duration;
+const int week_duration = 7 * day_duration;
+const int month_duration = 30 * day_duration;
+const int quarter_duration = 3 * month_duration;
+const int year_duration = 4 * quarter_duration;
+
+void populate_records(sqlite3 *db, uint64_t duration)
+{
+    uint64_t time = 0;
+    uint64_t event_id = 0;
+    uint64_t state = 0;
+    uint64_t state_event_id = 0;
+    uint64_t hour = 0;
+    uint64_t hour_event_id = 0;
+    uint64_t shift = 0;
+    uint64_t shift_event_id = 0;
+    uint64_t day = 0;
+    uint64_t day_event_id = 0;
+    uint64_t week = 0;
+    uint64_t week_event_id = 0;
+    uint64_t month = 0;
+    uint64_t month_event_id = 0;
+    uint64_t quarter = 0;
+    uint64_t quarter_event_id = 0;
+    uint64_t year = 0;
+    uint64_t year_event_id = 0;
+
+    sqlite3_exec(db, "BEGIN", 0, 0, 0);
+
+    while(time < duration)
+    {
+        std::ostringstream o;
+
+	o << "INSERT INTO production_metric (";
+        o << "event_id, ";
+        o << "record_order, ";
+        o << "slice_order, ";
+        o << "sync_id, ";
+        o << "record_version, ";
+        o << "start_time, ";
+        o << "end_time, ";
+        o << "modification_time, ";
+        o << "duration, ";
+        o << "state, ";
+        o << "state_event_id, ";
+        o << "shift, ";
+        o << "shift_event_id, ";
+        o << "hour, ";
+        o << "hour_event_id, ";
+        o << "day, ";
+        o << "day_event_id, ";
+        o << "day_number, ";
+        o << "week, ";
+        o << "week_event_id, ";
+        o << "month, ";
+        o << "month_event_id, ";
+        o << "quarter, ";
+        o << "quarter_event_id, ";
+        o << "year, ";
+        o << "year_event_id, ";
+        o << "good_count, ";
+        o << "ideal_time, ";
+        o << "in_count, ";
+        o << "not_scheduled_time, ";
+        o << "pack_out_count, ";
+        o << "partial_cycle_time, ";
+        o << "partial_cycles, ";
+        o << "planned_stop_time, "; //8
+        o << "reject_count, ";
+        o << "run_time, ";
+        o << "slow_cycle_lost_time, "; //11
+        o << "slow_cycle_time, ";
+        o << "slow_cycles, ";
+        o << "small_stop_lost_time, "; //14
+        o << "small_stop_time, "; //15
+        o << "small_stops, ";
+        o << "standard_cycle_lost_time, "; //17
+        o << "standard_cycle_time, ";
+        o << "standard_cycles, ";
+        o << "startup_rejects, ";
+        o << "suspect_cycle_lost_time, "; //21
+        o << "suspect_cycle_time, ";
+        o << "suspect_cycles, ";
+        o << "target_count, ";
+        o << "target_cycles, ";
+        o << "unplanned_stop_time, "; //26
+        o << "wip";
+	o << ") VALUES (";
+	o << event_id << ", ";
+	o << event_id << ", ";
+	o << event_id << ", ";
+	o << event_id << ", ";
+	o << 1 << ", ";
+	o << time << ", ";
+	o << time + step_duration << ", ";
+	o << time + step_duration << ", ";
+	o << step_duration << ", ";
+	o << state_lookup[state].value << ", ";
+	o << state_event_id << ", ";
+	o << shift_lookup[shift].value << ", ";
+	o << shift_event_id << ", ";
+	o << hour_lookup[hour].value << ", ";
+	o << hour_event_id << ", ";
+	o << day_lookup[day].value << ", ";
+	o << day_event_id << ", ";
+	o << day << ", ";
+	o << week_lookup[week].value << ", ";
+	o << week_event_id << ", ";
+	o << month_lookup[month].value << ", ";
+	o << month_event_id << ", ";
+	o << quarter_lookup[quarter].value << ", ";
+	o << quarter_event_id << ", ";
+	o << year_lookup[year].value << ", ";
+	o << year_event_id << ", ";
+	o <<  1 << ", ";
+	o <<  2 << ", ";
+	o <<  3 << ", ";
+	o <<  4 << ", ";
+	o <<  5 << ", ";
+	o <<  6 << ", ";
+	o <<  7 << ", ";
+	o <<  8 << ", ";
+	o <<  9 << ", ";
+	o << 10 << ", ";
+	o << 11 << ", ";
+	o << 12 << ", ";
+	o << 13 << ", ";
+	o << 14 << ", ";
+	o << 15 << ", ";
+	o << 16 << ", ";
+	o << 17 << ", ";
+	o << 18 << ", ";
+	o << 19 << ", ";
+	o << 20 << ", ";
+	o << 21 << ", ";
+	o << 22 << ", ";
+	o << 23 << ", ";
+	o << 24 << ", ";
+	o << 25 << ", ";
+	o << 26 << ", ";
+	o << 27 ;
+	o << ");";
+
+        char *zErrMsg = 0;
+        int rc = sqlite3_exec(db, o.str().c_str(), 0, 0, &zErrMsg);
+   
+        if( rc != SQLITE_OK ){
+            fprintf(stderr, "SQL error: %s\n", zErrMsg);
+            sqlite3_free(zErrMsg);
+        }
+
+	time += step_duration;
+	event_id++;
+
+	if(time % state_duration == 0)
+	{
+	    state_event_id++;
+            state++;
+	    if(state % state_lookup_size == 0)
+	    {
+                state = 0;
+	    }
+	}
+
+	if(time % hour_duration == 0)
+	{
+	    hour_event_id++;
+            hour++;
+	    if(hour % hour_lookup_size == 0)
+	    {
+                hour = 0;
+	    }
+	}
+
+	if(time % shift_duration == 0)
+	{
+	    shift_event_id++;
+            shift++;
+	    if(shift % shift_lookup_size == 0)
+	    {
+                shift = 0;
+	    }
+	}
+
+	if(time % week_duration == 0)
+	{
+	    week_event_id++;
+            week++;
+	    if(week % week_lookup_size == 0)
+	    {
+                week = 0;
+	    }
+	}
+
+	if(time % month_duration == 0)
+	{
+	    month_event_id++;
+            month++;
+	    if(month % month_lookup_size == 0)
+	    {
+                month = 0;
+	    }
+	}
+
+	if(time % quarter_duration == 0)
+	{
+	    quarter_event_id++;
+            quarter++;
+	    if(quarter % quarter_lookup_size == 0)
+	    {
+                quarter = 0;
+	    }
+	}
+
+	if(time % year_duration == 0)
+	{
+	    year_event_id++;
+            year++;
+	    std::cout << event_id << ", " << year_event_id << std::endl;
+
+            quarter = 0;
+            month = 0;
+            week = 0;
+
+	    if(year % year_lookup_size == 0)
+	    {
+                year = 0;
+	    }
+	}
+    }
+    sqlite3_exec(db, "COMMIT", 0, 0, 0);
+    sqlite3_exec(db, "VACUUM", 0, 0, 0);
+}
+
+
 
 void populate_values_table(sqlite3 *db, const char * name, ValueLookup *table, int count)
 {
@@ -253,12 +505,27 @@ void sqlite3_trace_callback(void * const arg, char const sql[])
     std::printf("SQL: [%s]\n", sql);
 }
 
+void populate_data(sqlite3 *db)
+{
+    populate_values_table(db, "hour_values", hour_lookup, hour_lookup_size);
+    populate_values_table(db, "day_values", day_lookup, day_lookup_size);
+    populate_values_table(db, "week_values", week_lookup, week_lookup_size);
+    populate_values_table(db, "month_values", month_lookup, month_lookup_size);
+    populate_values_table(db, "quarter_values", quarter_lookup, quarter_lookup_size);
+    populate_values_table(db, "year_values", year_lookup, year_lookup_size);
+    populate_values_table(db, "shift_values", shift_lookup, shift_lookup_size);
+    populate_values_table(db, "state_values", state_lookup, state_lookup_size);
+    
+
+    populate_records(db, year_duration*2);
+}
+
 int main(void)
 {
     sqlite3 *db;
     sqlite3_stmt *res;
 
-    int rc = sqlite3_open(":memory:", &db);
+    int rc = sqlite3_open("database", &db);
     if (rc != SQLITE_OK) {
         
         fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
@@ -267,27 +534,20 @@ int main(void)
         return 1;
     }
 
+
+    // rc = loadOrSaveDb(db,"database", false);
+    
+    // if (rc != SQLITE_OK)
+    // {
+    //     fprintf(stderr, "Failed to load database: %s\n", sqlite3_errmsg(db));
+    //     sqlite3_close(db);
+    //     return -1;
+    // }
+
+    //populate_data(db);
+
     sqlite3_profile(db, sqlite3_profile_callback, NULL);
-
-    rc = loadOrSaveDb(db,"database", false);
-    populate_values_table(db, "hour_values", hour_lookup, hour_lookup_size);
-    populate_values_table(db, "day_values", day_lookup, sizeof(day_lookup)/sizeof(*day_lookup));
-    populate_values_table(db, "week_values", week_lookup, sizeof(week_lookup)/sizeof(*week_lookup));
-    populate_values_table(db, "month_values", month_lookup, sizeof(month_lookup)/sizeof(*month_lookup));
-    populate_values_table(db, "quarter_values", quarter_lookup, sizeof(quarter_lookup)/sizeof(*quarter_lookup));
-    populate_values_table(db, "year_values", year_lookup, sizeof(year_lookup)/sizeof(*year_lookup));
-    populate_values_table(db, "shift_values", shift_lookup, sizeof(shift_lookup)/sizeof(*shift_lookup));
-    populate_values_table(db, "state_values", state_lookup, state_lookup_size);
-
-    if (rc != SQLITE_OK)
-    {
-        fprintf(stderr, "Failed to load database: %s\n", sqlite3_errmsg(db));
-	sqlite3_close(db);
-
-	return -1;
-    }
-
-    rc = sqlite3_prepare_v2(db, "SELECT count(*) from day_values", -1, &res, 0);    
+    rc = sqlite3_prepare_v2(db, "SELECT sum(good_count) FROM production_metric WHERE month = 2762969076959327514", -1, &res, 0);    
     //rc = sqlite3_prepare_v2(db, "SELECT max(production_metric.end_time) AS end_time, max(production_metric.record_id) AS record_id FROM production_metric GROUP BY production_metric.event_id ORDER BY min(production_metric.record_order) DESC LIMIT 1", -1, &res, 0);    
     
     if (rc != SQLITE_OK) {
@@ -297,12 +557,22 @@ int main(void)
         
         return 1;
     }    
+
+    double sum = 0.0;   
+    while(true) 
+    {
+        rc = sqlite3_step(res);
     
-    rc = sqlite3_step(res);
-    
-    if (rc == SQLITE_ROW) {
-        printf("%s\n", sqlite3_column_text(res, 0));
+        if (rc == SQLITE_ROW) {
+	    //sum += sqlite3_column_double(res,0);
+            //printf("%s\n", sqlite3_column_text(res, 0));
+        }
+	else
+        {
+            break;
+	}
     }
+
     
     sqlite3_finalize(res);
     sqlite3_close(db);

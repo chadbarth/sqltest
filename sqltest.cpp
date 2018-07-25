@@ -206,7 +206,6 @@ void populate_records(sqlite3 *db, uint64_t duration)
 
     while(time < duration)
     {
-        Stopwatch_Logger swl("writer", 100'000);
         std::ostringstream o;
 
         o << "INSERT INTO production_metric (";
@@ -319,17 +318,18 @@ void populate_records(sqlite3 *db, uint64_t duration)
         o << 27 ;
         o << ");";
 
-        swl.lap("startup");
+        {
+            Stopwatch_Logger swl("writer", 100'000);
 
-        char *zErrMsg = 0;
-        int rc = sqlite3_exec(db, o.str().c_str(), 0, 0, &zErrMsg);
+            char *zErrMsg = 0;
+            int rc = sqlite3_exec(db, o.str().c_str(), 0, 0, &zErrMsg);
 
-        swl.lap("sqlite3_exec");
-
-        if( rc != SQLITE_OK ){
-            fprintf(stderr, "populate error: %s\n", zErrMsg);
-            sqlite3_free(zErrMsg);
+            if( rc != SQLITE_OK ){
+                fprintf(stderr, "populate error: %s\n", zErrMsg);
+                sqlite3_free(zErrMsg);
+            }
         }
+
         time += step_duration;
         event_id++;
 
@@ -409,6 +409,7 @@ void populate_records(sqlite3 *db, uint64_t duration)
             }
         }
 
+        usleep(10000);
     }
 
     //sqlite3_exec(db, "COMMIT", 0, 0, 0);

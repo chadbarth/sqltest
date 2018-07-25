@@ -209,7 +209,7 @@ void populate_records(sqlite3 *db, uint64_t duration)
         Stopwatch_Logger swl("writer", 100'000);
         std::ostringstream o;
 
-	o << "INSERT INTO production_metric (";
+        o << "INSERT INTO production_metric (";
         o << "event_id, ";
         o << "record_order, ";
         o << "slice_order, ";
@@ -263,154 +263,155 @@ void populate_records(sqlite3 *db, uint64_t duration)
         o << "target_cycles, ";
         o << "unplanned_stop_time, "; //26
         o << "wip";
-	o << ") VALUES (";
-	o << event_id << ", ";
-	o << event_id << ", ";
-	o << event_id << ", ";
-	o << event_id << ", ";
-	o << 1 << ", ";
-	o << time << ", ";
-	o << time + step_duration << ", ";
-	o << time + step_duration << ", ";
-	o << step_duration << ", ";
-	o << state_lookup[state].value << ", ";
-	o << state_event_id << ", ";
-	o << shift_lookup[shift].value << ", ";
-	o << shift_event_id << ", ";
-	o << hour_lookup[hour].value << ", ";
-	o << hour_event_id << ", ";
-	o << day_lookup[day].value << ", ";
-	o << day_event_id << ", ";
-	o << day << ", ";
-	o << week_lookup[week].value << ", ";
-	o << week_event_id << ", ";
-	o << month_lookup[month].value << ", ";
-	o << month_event_id << ", ";
-	o << quarter_lookup[quarter].value << ", ";
-	o << quarter_event_id << ", ";
-	o << year_lookup[year].value << ", ";
-	o << year_event_id << ", ";
-	o <<  1 << ", ";
-	o <<  2 << ", ";
-	o <<  3 << ", ";
-	o <<  4 << ", ";
-	o <<  5 << ", ";
-	o <<  6 << ", ";
-	o <<  7 << ", ";
-	o <<  8 << ", ";
-	o <<  9 << ", ";
-	o << 10 << ", ";
-	o << 11 << ", ";
-	o << 12 << ", ";
-	o << 13 << ", ";
-	o << 14 << ", ";
-	o << 15 << ", ";
-	o << 16 << ", ";
-	o << 17 << ", ";
-	o << 18 << ", ";
-	o << 19 << ", ";
-	o << 20 << ", ";
-	o << 21 << ", ";
-	o << 22 << ", ";
-	o << 23 << ", ";
-	o << 24 << ", ";
-	o << 25 << ", ";
-	o << 26 << ", ";
-	o << 27 ;
-	o << ");";
+        o << ") VALUES (";
+        o << event_id << ", ";
+        o << event_id << ", ";
+        o << event_id << ", ";
+        o << event_id << ", ";
+        o << 1 << ", ";
+        o << time << ", ";
+        o << time + step_duration << ", ";
+        o << time + step_duration << ", ";
+        o << step_duration << ", ";
+        o << state_lookup[state].value << ", ";
+        o << state_event_id << ", ";
+        o << shift_lookup[shift].value << ", ";
+        o << shift_event_id << ", ";
+        o << hour_lookup[hour].value << ", ";
+        o << hour_event_id << ", ";
+        o << day_lookup[day].value << ", ";
+        o << day_event_id << ", ";
+        o << day << ", ";
+        o << week_lookup[week].value << ", ";
+        o << week_event_id << ", ";
+        o << month_lookup[month].value << ", ";
+        o << month_event_id << ", ";
+        o << quarter_lookup[quarter].value << ", ";
+        o << quarter_event_id << ", ";
+        o << year_lookup[year].value << ", ";
+        o << year_event_id << ", ";
+        o <<  1 << ", ";
+        o <<  2 << ", ";
+        o <<  3 << ", ";
+        o <<  4 << ", ";
+        o <<  5 << ", ";
+        o <<  6 << ", ";
+        o <<  7 << ", ";
+        o <<  8 << ", ";
+        o <<  9 << ", ";
+        o << 10 << ", ";
+        o << 11 << ", ";
+        o << 12 << ", ";
+        o << 13 << ", ";
+        o << 14 << ", ";
+        o << 15 << ", ";
+        o << 16 << ", ";
+        o << 17 << ", ";
+        o << 18 << ", ";
+        o << 19 << ", ";
+        o << 20 << ", ";
+        o << 21 << ", ";
+        o << 22 << ", ";
+        o << 23 << ", ";
+        o << 24 << ", ";
+        o << 25 << ", ";
+        o << 26 << ", ";
+        o << 27 ;
+        o << ");";
 
-	swl.lap("create query");
+        swl.lap("startup");
+
         char *zErrMsg = 0;
         int rc = sqlite3_exec(db, o.str().c_str(), 0, 0, &zErrMsg);
 
-	swl.lap("sqlite3_exec");
-   
+        swl.lap("sqlite3_exec");
+
         if( rc != SQLITE_OK ){
             fprintf(stderr, "populate error: %s\n", zErrMsg);
             sqlite3_free(zErrMsg);
         }
+        time += step_duration;
+        event_id++;
 
-	time += step_duration;
-	event_id++;
-
-	if(time % state_duration == 0)
-	{
-	    state_event_id++;
+        if(time % state_duration == 0)
+        {
+            state_event_id++;
             state++;
-	    if(state % state_lookup_size == 0)
-	    {
+            if(state % state_lookup_size == 0)
+            {
                 state = 0;
-	    }
-	}
+            }
+        }
 
-	if(time % hour_duration == 0)
-	{
-	    hour_event_id++;
+        if(time % hour_duration == 0)
+        {
+            hour_event_id++;
             hour++;
-	    if(hour % hour_lookup_size == 0)
-	    {
+            if(hour % hour_lookup_size == 0)
+            {
                 hour = 0;
-	    }
-	}
+            }
+        }
 
-	if(time % shift_duration == 0)
-	{
-	    shift_event_id++;
+        if(time % shift_duration == 0)
+        {
+            shift_event_id++;
             shift++;
-	    if(shift % shift_lookup_size == 0)
-	    {
+            if(shift % shift_lookup_size == 0)
+            {
                 shift = 0;
-	    }
-	}
+            }
+        }
 
-	if(time % week_duration == 0)
-	{
-	    week_event_id++;
+        if(time % week_duration == 0)
+        {
+            week_event_id++;
             week++;
-	    if(week % week_lookup_size == 0)
-	    {
+            if(week % week_lookup_size == 0)
+            {
                 week = 0;
-	    }
-	}
+            }
+        }
 
-	if(time % month_duration == 0)
-	{
-	    month_event_id++;
+        if(time % month_duration == 0)
+        {
+            month_event_id++;
             month++;
-	    if(month % month_lookup_size == 0)
-	    {
+            if(month % month_lookup_size == 0)
+            {
                 month = 0;
-	    }
-	}
+            }
+        }
 
-	if(time % quarter_duration == 0)
-	{
-	    quarter_event_id++;
+        if(time % quarter_duration == 0)
+        {
+            quarter_event_id++;
             quarter++;
-	    if(quarter % quarter_lookup_size == 0)
-	    {
+            if(quarter % quarter_lookup_size == 0)
+            {
                 quarter = 0;
-	    }
-	}
+            }
+        }
 
-	if(time % year_duration == 0)
-	{
-	    year_event_id++;
+        if(time % year_duration == 0)
+        {
+            year_event_id++;
             year++;
-	    std::cout << event_id << ", " << year_event_id << std::endl;
+            std::cout << event_id << ", " << year_event_id << std::endl;
 
             quarter = 0;
             month = 0;
             week = 0;
 
-	    if(year % year_lookup_size == 0)
-	    {
+            if(year % year_lookup_size == 0)
+            {
                 year = 0;
-	    }
-	}
+            }
+        }
+
     }
+
     //sqlite3_exec(db, "COMMIT", 0, 0, 0);
-    //sqlite3_exec(db, "VACUUM", 0, 0, 0);
 }
 
 
@@ -421,14 +422,14 @@ void populate_values_table(sqlite3 *db, const char * name, ValueLookup *table, i
 
     for(int i = 0; i < count; i++)
     {
-	std::ostringstream o;
-	o << "INSERT INTO \"" << name << "\" VALUES(";
-	o << table[i].value << ",";
-	o << "'" << table[i].key << "',";
-	o << "'" << table[i].display << "');";
+        std::ostringstream o;
+        o << "INSERT INTO \"" << name << "\" VALUES(";
+        o << table[i].value << ",";
+        o << "'" << table[i].key << "',";
+        o << "'" << table[i].display << "');";
 
         int rc = sqlite3_exec(db, o.str().c_str(), 0, 0, &zErrMsg);
-   
+
         if( rc != SQLITE_OK ){
             fprintf(stderr, "SQL error: %s\n", zErrMsg);
             sqlite3_free(zErrMsg);
@@ -437,15 +438,15 @@ void populate_values_table(sqlite3 *db, const char * name, ValueLookup *table, i
 }
 
 /*
-** This function is used to load the contents of a database file on disk 
+** This function is used to load the contents of a database file on disk
 ** into the "main" database of open database connection pInMemory, or
 ** to save the current contents of the database opened by pInMemory into
-** a database file on disk. pInMemory is probably an in-memory database, 
+** a database file on disk. pInMemory is probably an in-memory database,
 ** but this function will also work fine if it is not.
 **
 ** Parameter zFilename points to a nul-terminated string containing the
 ** name of the database file on disk to load from or save to. If parameter
-** isSave is non-zero, then the contents of the file zFilename are 
+** isSave is non-zero, then the contents of the file zFilename are
 ** overwritten with the contents of the database opened by pInMemory. If
 ** parameter isSave is zero, then the contents of the database opened by
 ** pInMemory are replaced by data loaded from the file zFilename.
@@ -454,50 +455,51 @@ void populate_values_table(sqlite3 *db, const char * name, ValueLookup *table, i
 ** an error occurs, an SQLite error code is returned.
 */
 int loadOrSaveDb(sqlite3 *pInMemory, const char *zFilename, int isSave){
-  int rc;                   /* Function return code */
-  sqlite3 *pFile;           /* Database connection opened on zFilename */
-  sqlite3_backup *pBackup;  /* Backup object used to copy data */
-  sqlite3 *pTo;             /* Database to copy to (pFile or pInMemory) */
-  sqlite3 *pFrom;           /* Database to copy from (pFile or pInMemory) */
+    int rc;                   /* Function return code */
+    sqlite3 *pFile;           /* Database connection opened on zFilename */
+    sqlite3_backup *pBackup;  /* Backup object used to copy data */
+    sqlite3 *pTo;             /* Database to copy to (pFile or pInMemory) */
+    sqlite3 *pFrom;           /* Database to copy from (pFile or pInMemory) */
 
-  /* Open the database file identified by zFilename. Exit early if this fails
-  ** for any reason. */
-  rc = sqlite3_open(zFilename, &pFile);
-  if( rc==SQLITE_OK ){
+    /* Open the database file identified by zFilename. Exit early if this fails
+    ** for any reason. */
+    rc = sqlite3_open(zFilename, &pFile);
+    if( rc==SQLITE_OK )
+    {
 
-    /* If this is a 'load' operation (isSave==0), then data is copied
-    ** from the database file just opened to database pInMemory. 
-    ** Otherwise, if this is a 'save' operation (isSave==1), then data
-    ** is copied from pInMemory to pFile.  Set the variables pFrom and
-    ** pTo accordingly. */
-    pFrom = (isSave ? pInMemory : pFile);
-    pTo   = (isSave ? pFile     : pInMemory);
+        /* If this is a 'load' operation (isSave==0), then data is copied
+        ** from the database file just opened to database pInMemory.
+        ** Otherwise, if this is a 'save' operation (isSave==1), then data
+        ** is copied from pInMemory to pFile.  Set the variables pFrom and
+        ** pTo accordingly. */
+        pFrom = (isSave ? pInMemory : pFile);
+        pTo   = (isSave ? pFile     : pInMemory);
 
-    /* Set up the backup procedure to copy from the "main" database of 
-    ** connection pFile to the main database of connection pInMemory.
-    ** If something goes wrong, pBackup will be set to NULL and an error
-    ** code and message left in connection pTo.
-    **
-    ** If the backup object is successfully created, call backup_step()
-    ** to copy data from pFile to pInMemory. Then call backup_finish()
-    ** to release resources associated with the pBackup object.  If an
-    ** error occurred, then an error code and message will be left in
-    ** connection pTo. If no error occurred, then the error code belonging
-    ** to pTo is set to SQLITE_OK.
-    */
-    pBackup = sqlite3_backup_init(pTo, "main", pFrom, "main");
-    if( pBackup ){
-      (void)sqlite3_backup_step(pBackup, -1);
-      (void)sqlite3_backup_finish(pBackup);
+        /* Set up the backup procedure to copy from the "main" database of
+        ** connection pFile to the main database of connection pInMemory.
+        ** If something goes wrong, pBackup will be set to NULL and an error
+        ** code and message left in connection pTo.
+        **
+        ** If the backup object is successfully created, call backup_step()
+        ** to copy data from pFile to pInMemory. Then call backup_finish()
+        ** to release resources associated with the pBackup object.  If an
+        ** error occurred, then an error code and message will be left in
+        ** connection pTo. If no error occurred, then the error code belonging
+        ** to pTo is set to SQLITE_OK.
+        */
+        pBackup = sqlite3_backup_init(pTo, "main", pFrom, "main");
+        if( pBackup ){
+            (void)sqlite3_backup_step(pBackup, -1);
+            (void)sqlite3_backup_finish(pBackup);
+        }
+        rc = sqlite3_errcode(pTo);
     }
-    rc = sqlite3_errcode(pTo);
-  }
-
-  /* Close the database connection opened on database file zFilename
-  ** and return the result of this function. */
-  (void)sqlite3_close(pFile);
-  return rc;
+    /* Close the database connection opened on database file zFilename
+    ** and return the result of this function. */
+    (void)sqlite3_close(pFile);
+    return rc;
 }
+
 
 void sqlite3_profile_callback( void * const cookie, char const query[], sqlite3_uint64 const duration_ns)
 {
@@ -520,7 +522,7 @@ void populate_data(sqlite3 *db)
     populate_values_table(db, "year_values", year_lookup, year_lookup_size);
     populate_values_table(db, "shift_values", shift_lookup, shift_lookup_size);
     populate_values_table(db, "state_values", state_lookup, state_lookup_size);
-    
+
 
     populate_records(db, year_duration*2);
 }
@@ -536,38 +538,38 @@ void *read_thread(void *ptr)
 
     int rc= sqlite3_open_v2("database", &db, open_flags, NULL);
     if (rc != SQLITE_OK) {
-        
+
         fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
         sqlite3_close(db);
-        
+
         return ptr;
     }
 
     while(1)
     {
         {
-            Stopwatch_Logger swl("reader", 1'000'000);
+            Stopwatch_Logger swl("reader", 500'000);
 
             sqlite3_stmt *res;
 
-            rc = sqlite3_prepare_v2(db, "SELECT max(shift_event_id) AS event_id, sum(duration) AS duration FROM production_metric GROUP BY shift_event_id ORDER BY max(record_order) DESC LIMIT 1", -1, &res, 0);    
-    
+            rc = sqlite3_prepare_v2(db, "SELECT max(shift_event_id) AS event_id, sum(duration) AS duration FROM production_metric GROUP BY shift_event_id ORDER BY max(record_order) DESC LIMIT 1", -1, &res, 0);
+
             if (rc != SQLITE_OK)
-	    {
-        
+            {
+
                 fprintf(stderr, "Reader prepare: %s\n", sqlite3_errmsg(db));
-            }    
+            }
 
             rc = sqlite3_step(res);
-    
+
             if (rc == SQLITE_ROW) {
                 printf("last: %d (%f)\n", sqlite3_column_int(res, 0),
-		    	             sqlite3_column_double(res, 1));
+                sqlite3_column_double(res, 1));
             }
-	    else
-	    {
+            else
+            {
                 fprintf(stderr, "Reader sqlite3_step: %s\n", sqlite3_errmsg(db));
-	    }
+            }
 
             sqlite3_finalize(res);
         }
@@ -583,9 +585,6 @@ void *read_thread(void *ptr)
 int main(void)
 {
     sqlite3 *db;
-    sqlite3_stmt *res;
-
-    Stopwatch_Logger swl("test");
 
     int open_flags = SQLITE_OPEN_READWRITE
                    | SQLITE_OPEN_CREATE
@@ -593,10 +592,10 @@ int main(void)
 
     int rc= sqlite3_open_v2("database", &db, open_flags, NULL);
     if (rc != SQLITE_OK) {
-        
+
         fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
         sqlite3_close(db);
-        
+
         return 1;
     }
 
@@ -609,7 +608,7 @@ int main(void)
 
 
     // rc = loadOrSaveDb(db,"database", false);
-    
+
     // if (rc != SQLITE_OK)
     // {
     //     fprintf(stderr, "Failed to load database: %s\n", sqlite3_errmsg(db));
@@ -620,15 +619,12 @@ int main(void)
 
     //sqlite3_profile(db, sqlite3_profile_callback, NULL);
 
-    swl.lap("go");
-
     pthread_t reader;
     // start the thread
     pthread_create(&reader, NULL, *read_thread, NULL);
 
     populate_data(db);
-    
-    sqlite3_finalize(res);
+
     sqlite3_close(db);
 
     // wait for thread to finish
@@ -636,4 +632,3 @@ int main(void)
 
     return 0;
 }
-

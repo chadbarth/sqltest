@@ -3,6 +3,7 @@
 #include <stdint.h>
 #include <iostream>
 #include <sstream>
+#include "Stopwatch_Logger.h"
 
 
 struct ValueLookup
@@ -201,10 +202,11 @@ void populate_records(sqlite3 *db, uint64_t duration)
     uint64_t year = 0;
     uint64_t year_event_id = 0;
 
-    sqlite3_exec(db, "BEGIN", 0, 0, 0);
+    //sqlite3_exec(db, "BEGIN", 0, 0, 0);
 
     while(time < duration)
     {
+        Stopwatch_Logger swl("writer", 100'000);
         std::ostringstream o;
 
 	o << "INSERT INTO production_metric (";
@@ -317,11 +319,14 @@ void populate_records(sqlite3 *db, uint64_t duration)
 	o << 27 ;
 	o << ");";
 
+	swl.lap("create query");
         char *zErrMsg = 0;
         int rc = sqlite3_exec(db, o.str().c_str(), 0, 0, &zErrMsg);
+
+	swl.lap("sqlite3_exec");
    
         if( rc != SQLITE_OK ){
-            fprintf(stderr, "SQL error: %s\n", zErrMsg);
+            fprintf(stderr, "populate error: %s\n", zErrMsg);
             sqlite3_free(zErrMsg);
         }
 
@@ -404,8 +409,8 @@ void populate_records(sqlite3 *db, uint64_t duration)
 	    }
 	}
     }
-    sqlite3_exec(db, "COMMIT", 0, 0, 0);
-    sqlite3_exec(db, "VACUUM", 0, 0, 0);
+    //sqlite3_exec(db, "COMMIT", 0, 0, 0);
+    //sqlite3_exec(db, "VACUUM", 0, 0, 0);
 }
 
 
@@ -520,18 +525,86 @@ void populate_data(sqlite3 *db)
     populate_records(db, year_duration*2);
 }
 
+// create the function to be executed as a thread
+void *read_thread(void *ptr)
+{
+    sqlite3 *db;
+
+    int open_flags = SQLITE_OPEN_READWRITE
+                   | SQLITE_OPEN_CREATE
+                   | SQLITE_OPEN_FULLMUTEX;
+
+    int rc= sqlite3_open_v2("database", &db, open_flags, NULL);
+    if (rc != SQLITE_OK) {
+        
+        fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
+        sqlite3_close(db);
+        
+        return ptr;
+    }
+
+    while(1)
+    {
+        {
+            Stopwatch_Logger swl("reader", 1'000'000);
+
+            sqlite3_stmt *res;
+
+            rc = sqlite3_prepare_v2(db, "SELECT max(shift_event_id) AS event_id, sum(duration) AS duration FROM production_metric GROUP BY shift_event_id ORDER BY max(record_order) DESC LIMIT 1", -1, &res, 0);    
+    
+            if (rc != SQLITE_OK)
+	    {
+        
+                fprintf(stderr, "Reader prepare: %s\n", sqlite3_errmsg(db));
+            }    
+
+            rc = sqlite3_step(res);
+    
+            if (rc == SQLITE_ROW) {
+                printf("last: %d (%f)\n", sqlite3_column_int(res, 0),
+		    	             sqlite3_column_double(res, 1));
+            }
+	    else
+	    {
+                fprintf(stderr, "Reader sqlite3_step: %s\n", sqlite3_errmsg(db));
+	    }
+
+            sqlite3_finalize(res);
+        }
+
+        sleep(1);
+    }
+
+
+    sqlite3_close(db);
+    return  ptr;
+}
+
 int main(void)
 {
     sqlite3 *db;
     sqlite3_stmt *res;
 
-    int rc = sqlite3_open("database", &db);
+    Stopwatch_Logger swl("test");
+
+    int open_flags = SQLITE_OPEN_READWRITE
+                   | SQLITE_OPEN_CREATE
+                   | SQLITE_OPEN_FULLMUTEX;
+
+    int rc= sqlite3_open_v2("database", &db, open_flags, NULL);
     if (rc != SQLITE_OK) {
         
         fprintf(stderr, "Cannot open database: %s\n", sqlite3_errmsg(db));
         sqlite3_close(db);
         
         return 1;
+    }
+
+    rc = sqlite3_exec(db, "PRAGMA journal_mode=WAL;", NULL, NULL, NULL);
+
+    if (rc != SQLITE_OK)
+    {
+        fprintf(stderr, "Failed to set journal mode: %s\n", sqlite3_errmsg(db));
     }
 
 
@@ -544,38 +617,22 @@ int main(void)
     //     return -1;
     // }
 
-    //populate_data(db);
 
-    sqlite3_profile(db, sqlite3_profile_callback, NULL);
-    rc = sqlite3_prepare_v2(db, "SELECT sum(good_count) FROM production_metric WHERE month = 2762969076959327514", -1, &res, 0);    
-    //rc = sqlite3_prepare_v2(db, "SELECT max(production_metric.end_time) AS end_time, max(production_metric.record_id) AS record_id FROM production_metric GROUP BY production_metric.event_id ORDER BY min(production_metric.record_order) DESC LIMIT 1", -1, &res, 0);    
-    
-    if (rc != SQLITE_OK) {
-        
-        fprintf(stderr, "Failed to fetch data: %s\n", sqlite3_errmsg(db));
-        sqlite3_close(db);
-        
-        return 1;
-    }    
+    //sqlite3_profile(db, sqlite3_profile_callback, NULL);
 
-    double sum = 0.0;   
-    while(true) 
-    {
-        rc = sqlite3_step(res);
-    
-        if (rc == SQLITE_ROW) {
-	    //sum += sqlite3_column_double(res,0);
-            //printf("%s\n", sqlite3_column_text(res, 0));
-        }
-	else
-        {
-            break;
-	}
-    }
+    swl.lap("go");
 
+    pthread_t reader;
+    // start the thread
+    pthread_create(&reader, NULL, *read_thread, NULL);
+
+    populate_data(db);
     
     sqlite3_finalize(res);
     sqlite3_close(db);
+
+    // wait for thread to finish
+    pthread_join(reader,NULL);
 
     return 0;
 }
